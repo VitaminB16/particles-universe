@@ -23,8 +23,8 @@ class UniverseGame:
         positions[:, 0:2] *= self.box_width
         return positions
 
-    def animate(self):
-        """Display the animation in a matplotlib animation."""
+    def animate(self, save=False, filename="animation.mp4", fps=60):
+        """Display the animation in a matplotlib animation. If save is True, save the animation to filename."""
         fig, ax = self._setup_plot()
         scatter = ax.scatter(self.particlePos[:, 0], self.particlePos[:, 1], alpha=0.5)
 
@@ -43,6 +43,8 @@ class UniverseGame:
             interval=self.update_interval,
             repeat=True,
         )
+        if save:
+            ani.save(filename, fps=fps, dpi=300)
         plt.show()
 
     def _setup_plot(self):

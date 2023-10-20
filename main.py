@@ -11,4 +11,4 @@ if __name__ == "__main__":
         clip_boundary=False,
         update_interval=50,
     )
-    game.animate()
+    game.animate(save=False, filename="animation.mp4", fps=60)
