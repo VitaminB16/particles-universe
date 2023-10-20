@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 
 def universe_game(
@@ -8,21 +9,23 @@ def universe_game(
     radius=1,
     chance_for_global_radius=0.1,
     beta=1,
+    update_interval=1,
     box_width=1,
     clip_boundary=True,
 ):
     particlePos = np.random.rand(n_particles, 3)
     particlePos[:, 2] *= 360
-    x_lim = np.array([0, box_width])
-    y_lim = np.array([0, box_width])
-    particlePos[:, 0] *= x_lim[1]
-    particlePos[:, 1] *= y_lim[1]
+    particlePos[:, 0] *= box_width
+    particlePos[:, 1] *= box_width
+
     fig, ax = plt.subplots()
     scatter = ax.scatter(particlePos[:, 0], particlePos[:, 1], alpha=0.5)
-    ax.set_xlim(x_lim)
-    ax.set_ylim(y_lim)
-    i = 0
-    while True:
+    ax.set_xlim(0, box_width)
+    ax.set_ylim(0, box_width)
+
+    def update(frame):
+        nonlocal particlePos
+
         direction_angles = np.radians(particlePos[:, 2])
         cos_vals, sin_vals = np.cos(direction_angles), np.sin(direction_angles)
 
@@ -35,10 +38,10 @@ def universe_game(
 
         if clip_boundary:
             # Bouncing logic
-            left_bounce = particlePos[:, 0] < x_lim[0]
-            right_bounce = particlePos[:, 0] > x_lim[1]
-            top_bounce = particlePos[:, 1] > y_lim[1]
-            bottom_bounce = particlePos[:, 1] < y_lim[0]
+            left_bounce = particlePos[:, 0] < 0
+            right_bounce = particlePos[:, 0] > box_width
+            top_bounce = particlePos[:, 1] > box_width
+            bottom_bounce = particlePos[:, 1] < 0
 
             particlePos[left_bounce, 2] = 180 - particlePos[left_bounce, 2]
             particlePos[right_bounce, 2] = 180 - particlePos[right_bounce, 2]
@@ -50,28 +53,33 @@ def universe_game(
             y_range = [particlePos[:, 1].min(), particlePos[:, 1].max()]
             ax.set_xlim(x_range)
             ax.set_ylim(y_range)
+
         scatter.set_offsets(particlePos[:, :2])
-        plt.pause(0.0001)
+        return (scatter,)
 
-        i += 1
-
+    ani = FuncAnimation(
+        fig, update, frames=None, blit=False, interval=update_interval, repeat=True
+    )
     plt.show()
 
 
 def where_to_turn(particlePos, radius, chance_for_global_radius=0.1):
     n_particles = particlePos.shape[0]
     global_radius_mask = np.random.rand(n_particles) < chance_for_global_radius
-    radius = np.array([radius] * n_particles)
-    radius[global_radius_mask] = 1000
+    effective_radius = np.where(global_radius_mask, 1000, radius)
+
     dx = particlePos[:, np.newaxis, 0] - particlePos[:, 0]
     dy = particlePos[:, np.newaxis, 1] - particlePos[:, 1]
     distances = np.sqrt(dx**2 + dy**2)
+    within_radius = distances < effective_radius[:, np.newaxis]
 
     bearings = np.arctan2(dy, dx)
-    relative_bearings = np.mod(np.degrees(bearings) - particlePos[:, 2], 360)
+    relative_bearings = np.mod(
+        np.degrees(bearings) - particlePos[:, 2, np.newaxis], 360
+    )
 
-    left_mask = (distances < radius) & (relative_bearings < 180)
-    right_mask = (distances < radius) & (relative_bearings > 180)
+    left_mask = within_radius & (relative_bearings < 180)
+    right_mask = within_radius & (relative_bearings > 180)
 
     leftCounter = np.sum(left_mask, axis=0)
     rightCounter = np.sum(right_mask, axis=0)
@@ -85,7 +93,8 @@ if __name__ == "__main__":
         velocity=0.4,
         radius=10,
         chance_for_global_radius=0.1,
-        beta=1,
+        beta=50,
         box_width=100,
-        clip_boundary=True,
+        clip_boundary=False,
+        update_interval=10,
     )
