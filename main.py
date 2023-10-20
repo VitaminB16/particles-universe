@@ -31,14 +31,6 @@ def universe_game(nParticles, velocity):
         particlePos[:, 1] += v * np.sin(np.radians(particlePos[:, 2]))
         plt.scatter(particlePos[:, 0], particlePos[:, 1])
 
-        for ii in range(nParticles):
-            x0, y0 = particlePos[ii, :2]
-            direction = particlePos[ii, 2]
-            x1 = x0 + 0.02 * np.cos(np.radians(direction))
-            y1 = y0 + 0.02 * np.sin(np.radians(direction))
-            plt.plot([x0, x1], [y0, y1])
-            plt.text(x0 + 0.015, y0, str(where_to_turn([x0, y0], direction)))
-
         plt.title(f"{p}")
         plt.pause(0.001)
         plt.clf()
