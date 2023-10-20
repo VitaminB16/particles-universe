@@ -10,5 +10,6 @@ if __name__ == "__main__":
         box_width=5,
         clip_boundary=False,
         update_interval=50,
+        distribution="hexagonal"
     )
     game.animate(save=False, filename="animation.mp4", fps=60)

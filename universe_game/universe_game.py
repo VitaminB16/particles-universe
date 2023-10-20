@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from time import time
 
+from .distributions import hexagonal_lattice
+
 
 class UniverseGame:
     def __init__(self, n_particles, velocity, **kwargs):
@@ -14,13 +16,20 @@ class UniverseGame:
         self.update_interval = kwargs.get("update_interval", 1)
         self.box_width = kwargs.get("box_width", 1)
         self.clip_boundary = kwargs.get("clip_boundary", True)
+        self.distribution = kwargs.get("distribution", "uniform")
         self.particlePos = self._initialize_particle_positions()
         self.time_prev = time()
 
     def _initialize_particle_positions(self):
-        positions = np.random.rand(self.n_particles, 3)
+        if self.distribution == "uniform":
+            positions = np.random.rand(self.n_particles, 3) * self.box_width
+        elif self.distribution == "hexagonal":
+            positions = hexagonal_lattice(
+                n_particles=self.n_particles, radius=self.radius
+            )
+            self.box_width = np.max(positions[:, 0:2])
+
         positions[:, 2] *= 360
-        positions[:, 0:2] *= self.box_width
         return positions
 
     def animate(self, save=False, filename="animation.mp4", fps=60):
@@ -29,7 +38,7 @@ class UniverseGame:
         scatter = ax.scatter(self.particlePos[:, 0], self.particlePos[:, 1], alpha=0.5)
 
         def update(frame):
-            self._update_particle_positions()
+            self._update_particle_positions(ax)
             scatter.set_offsets(self.particlePos[:, :2])
             self._update_plot_title(ax)
 
@@ -49,8 +58,7 @@ class UniverseGame:
 
     def _setup_plot(self):
         fig, ax = plt.subplots()
-        ax.set_xlim(0, self.box_width)
-        ax.set_ylim(0, self.box_width)
+        self._recalculate_limits(ax)
         return fig, ax
 
     def _update_plot_title(self, ax):
@@ -58,10 +66,12 @@ class UniverseGame:
         self.time_prev = time()
         ax.set_title(f"FPS: {fps:.2f}")
 
-    def _update_particle_positions(self):
+    def _update_particle_positions(self, ax):
         self._move_particles_based_on_angle()
         if self.clip_boundary:
             self._handle_boundary()
+        else:
+            self._recalculate_limits(ax)
         turns = self._calculate_turns()
         self._apply_turns(turns)
 
@@ -132,3 +142,7 @@ class UniverseGame:
         ]
         for condition, angle in conditions:
             self.particlePos[condition, 2] = angle - self.particlePos[condition, 2]
+
+    def _recalculate_limits(self, ax):
+        ax.set_xlim(self.particlePos[:, 0].min(), self.particlePos[:, 0].max())
+        ax.set_ylim(self.particlePos[:, 1].min(), self.particlePos[:, 1].max())
