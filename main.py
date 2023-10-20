@@ -3,12 +3,11 @@ import matplotlib.pyplot as plt
 
 
 def universe_game(nParticles, velocity, radius=1, chance_for_global_radius=0.1, beta=1):
-    particlePos = np.random.rand(nParticles, 30)
+    particlePos = np.random.rand(nParticles, 3)
     particlePos[:, 2] *= 360
 
     fig, ax = plt.subplots()
     scatter = ax.scatter(particlePos[:, 0], particlePos[:, 1], alpha=0.5)
-    lines = [ax.plot([0, 0], [0, 0], color="blue")[0] for _ in range(nParticles)]
     i = 0
     while True:
         particlePos[:, 2] = np.mod(particlePos[:, 2], 360)
@@ -16,13 +15,7 @@ def universe_game(nParticles, velocity, radius=1, chance_for_global_radius=0.1, 
         direction_angles = np.radians(particlePos[:, 2])
         cos_vals, sin_vals = np.cos(direction_angles), np.sin(direction_angles)
 
-        turns = where_to_turn(
-            particlePos[:, :2],
-            direction_angles,
-            particlePos,
-            radius,
-            chance_for_global_radius,
-        )
+        turns = where_to_turn(particlePos, radius, chance_for_global_radius)
         turns = beta * turns
         particlePos[:, 2] = np.mod(particlePos[:, 2] + turns, 360)
 
@@ -31,37 +24,28 @@ def universe_game(nParticles, velocity, radius=1, chance_for_global_radius=0.1, 
 
         scatter.set_offsets(particlePos[:, :2])
 
-        # Update the axis limits
         ax.set_xlim(particlePos[:, 0].min() - 0.1, particlePos[:, 0].max() + 0.1)
         ax.set_ylim(particlePos[:, 1].min() - 0.1, particlePos[:, 1].max() + 0.1)
+        plt.pause(0.001)
 
-        plt.pause(0.00001)
+        i += 1
 
     plt.show()
 
 
-def where_to_turn(
-    coords, directions, particlePos, radius, chance_for_global_radius=0.1, beta=1
-):
+def where_to_turn(particlePos, radius, chance_for_global_radius=0.1):
     if np.random.rand() < chance_for_global_radius:
         radius = 10000
-    x0s, y0s = coords.T
-    bearings = np.mod(
-        np.degrees(
-            np.arctan2(
-                particlePos[:, np.newaxis, 1] - y0s, particlePos[:, np.newaxis, 0] - x0s
-            )
-            - directions
-        ),
-        360,
-    )
-    distances = np.sqrt(
-        (particlePos[:, np.newaxis, 0] - x0s) ** 2
-        + (particlePos[:, np.newaxis, 1] - y0s) ** 2
-    )
+    dx = particlePos[:, np.newaxis, 0] - particlePos[:, 0]
+    dy = particlePos[:, np.newaxis, 1] - particlePos[:, 1]
+    distances = np.sqrt(dx**2 + dy**2)
 
-    left_mask = (distances < radius) & (bearings < 180)
-    right_mask = (distances < radius) & (bearings > 180)
+    bearings = np.arctan2(dy, dx)
+    direction_angles = np.radians(particlePos[:, 2])
+    relative_bearings = np.mod(np.degrees(bearings - direction_angles), 360)
+
+    left_mask = (distances < radius) & (relative_bearings < 180)
+    right_mask = (distances < radius) & (relative_bearings > 180)
 
     leftCounter = np.sum(left_mask, axis=0)
     rightCounter = np.sum(right_mask, axis=0)
@@ -70,4 +54,4 @@ def where_to_turn(
 
 
 if __name__ == "__main__":
-    universe_game(5000, 0.067, radius=5, chance_for_global_radius=0.1, beta=17)
+    universe_game(1000, 0.01, radius=1, chance_for_global_radius=0.0, beta=1)
