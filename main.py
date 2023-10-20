@@ -77,24 +77,26 @@ def where_to_turn(particlePos, radius, chance_for_global_radius=0.1):
     relative_bearings = np.mod(
         np.degrees(bearings) - particlePos[:, 2, np.newaxis], 360
     )
-
     left_mask = within_radius & (relative_bearings < 180)
     right_mask = within_radius & (relative_bearings > 180)
 
     leftCounter = np.sum(left_mask, axis=0)
     rightCounter = np.sum(right_mask, axis=0)
-
-    return np.sign(leftCounter - rightCounter)
+    direction_turn = np.sign(leftCounter - rightCounter)
+    # For particles that don't have any neighbors within the radius, set them to random direction
+    no_neighbors = leftCounter + rightCounter <= 2
+    direction_turn[no_neighbors] = np.random.uniform(-180, 180, size=no_neighbors.sum())
+    return direction_turn
 
 
 if __name__ == "__main__":
     universe_game(
         n_particles=1000,
-        velocity=0.4,
-        radius=10,
+        velocity=0.05,
+        radius=1,
         chance_for_global_radius=0.1,
-        beta=50,
-        box_width=100,
+        beta=1,
+        box_width=10,
         clip_boundary=False,
         update_interval=10,
     )
