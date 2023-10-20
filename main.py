@@ -55,6 +55,7 @@ def universe_game(
             ax.set_ylim(y_range)
 
         scatter.set_offsets(particlePos[:, :2])
+
         return (scatter,)
 
     ani = FuncAnimation(
@@ -74,17 +75,16 @@ def where_to_turn(particlePos, radius, chance_for_global_radius=0.1):
     within_radius = distances < effective_radius[:, np.newaxis]
 
     bearings = np.arctan2(dy, dx)
-    relative_bearings = np.mod(
-        np.degrees(bearings) - particlePos[:, 2, np.newaxis], 360
-    )
-    left_mask = within_radius & (relative_bearings < 180)
-    right_mask = within_radius & (relative_bearings > 180)
+    relative_bearings = np.degrees(bearings) - particlePos[:, 2, np.newaxis]
+    relative_bearings = (relative_bearings + 180) % 360 - 180
+    left_mask = within_radius & (relative_bearings <= 0)
+    right_mask = within_radius & (relative_bearings > 0)
 
-    leftCounter = np.sum(left_mask, axis=0)
-    rightCounter = np.sum(right_mask, axis=0)
+    leftCounter = np.sum(left_mask, axis=1)
+    rightCounter = np.sum(right_mask, axis=1)
     direction_turn = np.sign(leftCounter - rightCounter)
     # For particles that don't have any neighbors within the radius, set them to random direction
-    no_neighbors = leftCounter + rightCounter <= 2
+    no_neighbors = (leftCounter == 0) & (rightCounter == 0)
     direction_turn[no_neighbors] = np.random.uniform(-180, 180, size=no_neighbors.sum())
     return direction_turn
 
@@ -92,11 +92,11 @@ def where_to_turn(particlePos, radius, chance_for_global_radius=0.1):
 if __name__ == "__main__":
     universe_game(
         n_particles=1000,
-        velocity=0.05,
+        velocity=0.003,
         radius=1,
-        chance_for_global_radius=0.1,
-        beta=1,
-        box_width=10,
+        chance_for_global_radius=0.4,
+        beta=5,
+        box_width=5,
         clip_boundary=False,
         update_interval=10,
     )
