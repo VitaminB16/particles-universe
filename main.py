@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from time import time
 
 
 def universe_game(
@@ -13,6 +14,8 @@ def universe_game(
     box_width=1,
     clip_boundary=True,
 ):
+    """Simulate a universe of particles moving around in a box"""
+    time_prev = time()
     particlePos = np.random.rand(n_particles, 3)
     particlePos[:, 2] *= 360
     particlePos[:, 0] *= box_width
@@ -25,6 +28,7 @@ def universe_game(
 
     def update(frame):
         nonlocal particlePos
+        nonlocal time_prev
 
         direction_angles = np.radians(particlePos[:, 2])
         cos_vals, sin_vals = np.cos(direction_angles), np.sin(direction_angles)
@@ -37,17 +41,7 @@ def universe_game(
         particlePos[:, 1] += velocity * sin_vals
 
         if clip_boundary:
-            # Bouncing logic
-            left_bounce = particlePos[:, 0] < 0
-            right_bounce = particlePos[:, 0] > box_width
-            top_bounce = particlePos[:, 1] > box_width
-            bottom_bounce = particlePos[:, 1] < 0
-
-            particlePos[left_bounce, 2] = 180 - particlePos[left_bounce, 2]
-            particlePos[right_bounce, 2] = 180 - particlePos[right_bounce, 2]
-            particlePos[top_bounce, 2] = 360 - particlePos[top_bounce, 2]
-            particlePos[bottom_bounce, 2] = 360 - particlePos[bottom_bounce, 2]
-            particlePos[:, 2] = np.mod(particlePos[:, 2], 360)
+            particlePos = handle_boundary(particlePos, box_width)
         else:
             x_range = [particlePos[:, 0].min(), particlePos[:, 0].max()]
             y_range = [particlePos[:, 1].min(), particlePos[:, 1].max()]
@@ -55,6 +49,11 @@ def universe_game(
             ax.set_ylim(y_range)
 
         scatter.set_offsets(particlePos[:, :2])
+
+        time_now = time()
+        fps = 1 / (time_now - time_prev)
+        time_prev = time_now
+        ax.set_title(f"FPS: {fps:.2f}")
 
         return (scatter,)
 
@@ -65,6 +64,7 @@ def universe_game(
 
 
 def where_to_turn(particlePos, radius, chance_for_global_radius=0.1):
+    """Calculate the direction to turn for each particle based on the number of neighbors within the radius"""
     n_particles = particlePos.shape[0]
     global_radius_mask = np.random.rand(n_particles) < chance_for_global_radius
     effective_radius = np.where(global_radius_mask, 1000, radius)
@@ -89,6 +89,21 @@ def where_to_turn(particlePos, radius, chance_for_global_radius=0.1):
     return direction_turn
 
 
+def handle_boundary(particlePos, box_width):
+    """Handle boundary conditions for particles that go out of the box"""
+    left_bounce = particlePos[:, 0] < 0
+    right_bounce = particlePos[:, 0] > box_width
+    top_bounce = particlePos[:, 1] > box_width
+    bottom_bounce = particlePos[:, 1] < 0
+
+    particlePos[left_bounce, 2] = 180 - particlePos[left_bounce, 2]
+    particlePos[right_bounce, 2] = 180 - particlePos[right_bounce, 2]
+    particlePos[top_bounce, 2] = 360 - particlePos[top_bounce, 2]
+    particlePos[bottom_bounce, 2] = 360 - particlePos[bottom_bounce, 2]
+    particlePos[:, 2] = np.mod(particlePos[:, 2], 360)
+    return particlePos
+
+
 if __name__ == "__main__":
     universe_game(
         n_particles=1000,
@@ -98,5 +113,5 @@ if __name__ == "__main__":
         beta=5,
         box_width=5,
         clip_boundary=False,
-        update_interval=10,
+        update_interval=50,
     )
