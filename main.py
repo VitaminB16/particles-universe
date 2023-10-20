@@ -18,8 +18,7 @@ def universe_game(
     time_prev = time()
     particlePos = np.random.rand(n_particles, 3)
     particlePos[:, 2] *= 360
-    particlePos[:, 0] *= box_width
-    particlePos[:, 1] *= box_width
+    particlePos[:, 0:2] *= box_width
 
     fig, ax = plt.subplots()
     scatter = ax.scatter(particlePos[:, 0], particlePos[:, 1], alpha=0.5)
@@ -27,15 +26,11 @@ def universe_game(
     ax.set_ylim(0, box_width)
 
     def update(frame):
-        nonlocal particlePos
-        nonlocal time_prev
-
+        nonlocal particlePos, time_prev, ax
         direction_angles = np.radians(particlePos[:, 2])
         cos_vals, sin_vals = np.cos(direction_angles), np.sin(direction_angles)
-
         turns = where_to_turn(particlePos, radius, chance_for_global_radius)
-        turns = beta * turns
-        particlePos[:, 2] = np.mod(particlePos[:, 2] + turns, 360)
+        particlePos[:, 2] = np.mod(particlePos[:, 2] + turns * beta, 360)
 
         particlePos[:, 0] += velocity * cos_vals
         particlePos[:, 1] += velocity * sin_vals
@@ -43,10 +38,7 @@ def universe_game(
         if clip_boundary:
             particlePos = handle_boundary(particlePos, box_width)
         else:
-            x_range = [particlePos[:, 0].min(), particlePos[:, 0].max()]
-            y_range = [particlePos[:, 1].min(), particlePos[:, 1].max()]
-            ax.set_xlim(x_range)
-            ax.set_ylim(y_range)
+            set_axes_limits(ax, particlePos)
 
         scatter.set_offsets(particlePos[:, :2])
 
@@ -80,10 +72,9 @@ def where_to_turn(particlePos, radius, chance_for_global_radius=0.1):
     left_mask = within_radius & (relative_bearings <= 0)
     right_mask = within_radius & (relative_bearings > 0)
 
-    leftCounter = np.sum(left_mask, axis=1)
-    rightCounter = np.sum(right_mask, axis=1)
+    leftCounter = left_mask.sum(axis=1)
+    rightCounter = right_mask.sum(axis=1)
     direction_turn = np.sign(leftCounter - rightCounter)
-    # For particles that don't have any neighbors within the radius, set them to random direction
     no_neighbors = (leftCounter == 0) & (rightCounter == 0)
     direction_turn[no_neighbors] = np.random.uniform(-180, 180, size=no_neighbors.sum())
     return direction_turn
@@ -104,10 +95,16 @@ def handle_boundary(particlePos, box_width):
     return particlePos
 
 
+def set_axes_limits(ax, particlePos):
+    """Set the axes limits to the minimum and maximum particle positions"""
+    ax.set_xlim(particlePos[:, 0].min(), particlePos[:, 0].max())
+    ax.set_ylim(particlePos[:, 1].min(), particlePos[:, 1].max())
+
+
 if __name__ == "__main__":
     universe_game(
         n_particles=1000,
-        velocity=0.003,
+        velocity=0.01,
         radius=1,
         chance_for_global_radius=0.4,
         beta=5,
