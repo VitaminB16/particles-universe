@@ -1,10 +1,11 @@
-import numpy as np
-import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+import matplotlib.pyplot as plt
 from time import time
+import numpy as np
 import pygame
 import math
 
+from .utils import jprint
 from .distributions import hexagonal_lattice
 from .pygame_utils import compute_dynamic_scale_and_offset, lerp
 
@@ -20,6 +21,8 @@ class UniverseGame:
         self.box_width = kwargs.get("box_width", 1)
         self.clip_boundary = kwargs.get("clip_boundary", True)
         self.distribution = kwargs.get("distribution", "uniform")
+        print("Initialized UniverseGame with the following parameters:")
+        jprint(self.__dict__)
         self.particlePos = self._initialize_particle_positions()
         self.prev_scale_x, self.prev_scale_y = 1, 1
         self.prev_offset_x, self.prev_offset_y = 0, 0
@@ -44,10 +47,8 @@ class UniverseGame:
         font = pygame.font.Font(None, 30)
         lerp_factor = 0.05  # This determines how smooth the transition will be
         circle_radius = 5
-        
         # Create a separate surface for particles
         particle_surface = pygame.Surface(window_size, pygame.SRCALPHA)
-        
         # Precompute x and y velocities for all particles
         velocities = []
         for _, _, angle in self.particlePos:
@@ -55,7 +56,6 @@ class UniverseGame:
             vel_x = self.velocity * math.cos(radian)
             vel_y = self.velocity * math.sin(radian)
             velocities.append((vel_x, vel_y))
-        
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -82,14 +82,16 @@ class UniverseGame:
                 vel_x, vel_y = velocities[idx]
                 x += vel_x
                 y += vel_y
-                
                 scaled_x = (x + final_offset_x) * final_scale_x
                 scaled_y = (y + final_offset_y) * final_scale_y
                 pygame.draw.circle(
-                    particle_surface, (0, 0, 0), (int(scaled_x), int(scaled_y)), circle_radius
+                    particle_surface,
+                    (0, 0, 0),
+                    (scaled_x, scaled_y),
+                    circle_radius,
                 )
 
-            screen.blit(particle_surface, (0, 0))  # Blit particle surface onto main screen
+            screen.blit(particle_surface, (0, 0))
 
             # Update previous values for next frame
             self.prev_scale_x, self.prev_scale_y = final_scale_x, final_scale_y
@@ -100,8 +102,7 @@ class UniverseGame:
             screen.blit(fps_text, (10, 10))
 
             pygame.display.flip()
-            clock.tick(60)  # Set max fps to 60
-
+            clock.tick(120)
 
     def animate(self, save=False, filename="animation.mp4", fps=60):
         """Display the animation in a matplotlib animation. If save is True, save the animation to filename."""
@@ -174,7 +175,7 @@ class UniverseGame:
         return dx, dy, distances
 
     def _calculate_relative_bearings(self, dx, dy):
-        bearings = np.arctan2(dy, dx)
+        bearings = np.arctan2(dy, dx)  # The main bottleneck!
         relative_bearings = np.degrees(bearings) - self.particlePos[:, 2, np.newaxis]
         return (relative_bearings + 180) % 360 - 180
 
