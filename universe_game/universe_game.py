@@ -1,6 +1,7 @@
 from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 from time import time
+import numexpr as ne
 import numpy as np
 import pygame
 import math
@@ -154,48 +155,62 @@ class UniverseGame:
         self.particlePos[:, 1] += self.velocity * sin_vals
 
     def _calculate_turns(self):
-        effective_radius = self._get_effective_radius()
-        dx, dy, distances = self._calculate_relative_distances()
+        effective_radius_sq = self._get_effective_radius_sq()
+        dx, dy, distances_sq = self._calculate_relative_distances()
         relative_bearings = self._calculate_relative_bearings(dx, dy)
         direction_turn = self._determine_turn_direction(
-            distances, relative_bearings, effective_radius
+            distances_sq, relative_bearings, effective_radius_sq
         )
         return direction_turn
 
-    def _get_effective_radius(self, global_radius=1000):
+    def _get_effective_radius_sq(self, global_radius_sq=1000**2):
         global_radius_mask = (
             np.random.rand(self.n_particles) < self.chance_for_global_radius
         )
-        return np.where(global_radius_mask, global_radius, self.radius)
+        return np.where(global_radius_mask, global_radius_sq, self.radius**2)
 
     def _calculate_relative_distances(self):
-        dx = self.particlePos[:, np.newaxis, 0] - self.particlePos[:, 0]
-        dy = self.particlePos[:, np.newaxis, 1] - self.particlePos[:, 1]
-        distances = np.sqrt(dx**2 + dy**2)
+        x = self.particlePos[:, 0]
+        y = self.particlePos[:, 1]
+        x_newaxis = x[:, np.newaxis]
+        y_newaxis = y[:, np.newaxis]
+        dx = ne.evaluate("x_newaxis - x")
+        dy = ne.evaluate("y_newaxis - y")
+        distances = ne.evaluate("dx**2 + dy**2")
         return dx, dy, distances
 
     def _calculate_relative_bearings(self, dx, dy):
-        bearings = np.arctan2(dy, dx)  # The main bottleneck!
-        relative_bearings = np.degrees(bearings) - self.particlePos[:, 2, np.newaxis]
-        return (relative_bearings + 180) % 360 - 180
-
-    def _determine_turn_direction(self, distances, relative_bearings, effective_radius):
-        left_mask, right_mask = self._get_turn_masks(
-            distances, relative_bearings, effective_radius
+        bearings = ne.evaluate("arctan2(dy, dx)")
+        degrees_conversion_factor = 180 / np.pi
+        particle_angles = self.particlePos[:, 2, np.newaxis]
+        relative_bearings = ne.evaluate(
+            "bearings * degrees_conversion_factor - particle_angles"
         )
-        leftCounter = left_mask.sum(axis=1)
-        rightCounter = right_mask.sum(axis=1)
-        direction_turn = np.sign(leftCounter - rightCounter)
-        no_neighbors = (leftCounter == 0) & (rightCounter == 0)
+        adjusted_relative_bearings = ne.evaluate(
+            "(relative_bearings + 180) % 360 - 180"
+        )
+        return adjusted_relative_bearings
+
+    def _determine_turn_direction(
+        self, distances_sq, relative_bearings, effective_radius_sq
+    ):
+        left_mask, right_mask = self._get_turn_masks(
+            distances_sq, relative_bearings, effective_radius_sq
+        )
+        left_counter = left_mask.sum(axis=1)
+        right_counter = right_mask.sum(axis=1)
+        direction_turn = np.sign(left_counter - right_counter)
+        no_neighbors = (left_counter == 0) & (right_counter == 0)
         direction_turn[no_neighbors] = np.random.uniform(
             -180, 180, size=no_neighbors.sum()
         )
         return direction_turn
 
-    def _get_turn_masks(self, distances, relative_bearings, effective_radius):
-        within_radius = distances < effective_radius[:, np.newaxis]
-        left_mask = within_radius & (relative_bearings <= 0)
-        right_mask = within_radius & (relative_bearings > 0)
+    def _get_turn_masks(self, distances_sq, relative_bearings, effective_radius_sq):
+        effective_radius_sq_newaxis = effective_radius_sq[:, np.newaxis]
+        within_radius = ne.evaluate("distances_sq < effective_radius_sq_newaxis")
+        left_mask = ne.evaluate("within_radius & (relative_bearings <= 0)")
+        right_mask = ne.evaluate("within_radius & (relative_bearings > 0)")
         return left_mask, right_mask
 
     def _apply_turns(self, turns):
