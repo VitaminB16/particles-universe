@@ -22,6 +22,7 @@ class UniverseGame:
         self.box_width = kwargs.get("box_width", 1)
         self.clip_boundary = kwargs.get("clip_boundary", True)
         self.distribution = kwargs.get("distribution", "uniform")
+        self.draw_radius = kwargs.get("draw_radius", False)
         print("Initialized UniverseGame with the following parameters:")
         jprint(self.__dict__)
         self.particlePos = self._initialize_particle_positions()
@@ -91,6 +92,14 @@ class UniverseGame:
                     (scaled_x, scaled_y),
                     circle_radius,
                 )
+                if self.draw_radius:
+                    pygame.draw.circle(
+                        particle_surface,
+                        (0, 0, 0),
+                        (scaled_x, scaled_y),
+                        self.radius * max(final_scale_x, final_scale_y),
+                        1,
+                    )
 
             screen.blit(particle_surface, (0, 0))
 
@@ -200,7 +209,7 @@ class UniverseGame:
         left_counter = left_mask.sum(axis=1)
         right_counter = right_mask.sum(axis=1)
         direction_turn = np.sign(left_counter - right_counter)
-        no_neighbors = (left_counter == 0) & (right_counter == 0)
+        no_neighbors = left_counter + right_counter == 1
         direction_turn[no_neighbors] = np.random.uniform(
             -180, 180, size=no_neighbors.sum()
         )
@@ -233,5 +242,9 @@ class UniverseGame:
     def _recalculate_limits(self, ax):
         if ax is None:
             return
-        ax.set_xlim(self.particlePos[:, 0].min(), self.particlePos[:, 0].max())
-        ax.set_ylim(self.particlePos[:, 1].min(), self.particlePos[:, 1].max())
+        x_low = np.percentile(self.particlePos[:, 0], 0.03) - self.radius
+        x_high = np.percentile(self.particlePos[:, 0], 0.97) + self.radius
+        y_low = np.percentile(self.particlePos[:, 1], 0.03) - self.radius
+        y_high = np.percentile(self.particlePos[:, 1], 0.97) + self.radius
+        ax.set_xlim(x_low, x_high)
+        ax.set_ylim(y_low, y_high)
