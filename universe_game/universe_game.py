@@ -2,8 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from time import time
+import pygame
+import math
 
 from .distributions import hexagonal_lattice
+from .pygame_utils import compute_dynamic_scale_and_offset, lerp
 
 
 class UniverseGame:
@@ -18,6 +21,8 @@ class UniverseGame:
         self.clip_boundary = kwargs.get("clip_boundary", True)
         self.distribution = kwargs.get("distribution", "uniform")
         self.particlePos = self._initialize_particle_positions()
+        self.prev_scale_x, self.prev_scale_y = 1, 1
+        self.prev_offset_x, self.prev_offset_y = 0, 0
         self.time_prev = time()
 
     def _initialize_particle_positions(self):
@@ -31,6 +36,72 @@ class UniverseGame:
 
         positions[:, 2] *= 360
         return positions
+
+    def start_pygame(self, window_size=(800, 800)):
+        pygame.init()
+        screen = pygame.display.set_mode(window_size)
+        clock = pygame.time.Clock()
+        font = pygame.font.Font(None, 30)
+        lerp_factor = 0.05  # This determines how smooth the transition will be
+        circle_radius = 5
+        
+        # Create a separate surface for particles
+        particle_surface = pygame.Surface(window_size, pygame.SRCALPHA)
+        
+        # Precompute x and y velocities for all particles
+        velocities = []
+        for _, _, angle in self.particlePos:
+            radian = math.radians(angle)
+            vel_x = self.velocity * math.cos(radian)
+            vel_y = self.velocity * math.sin(radian)
+            velocities.append((vel_x, vel_y))
+        
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
+
+            screen.fill((255, 255, 255))  # Fill screen with white
+            particle_surface.fill((0, 0, 0, 0))  # Clear particle surface
+
+            self._update_particle_positions()
+
+            scale_x, scale_y, offset_x, offset_y = compute_dynamic_scale_and_offset(
+                self.particlePos, window_size, padding=0.2
+            )
+
+            final_scale_x = lerp(self.prev_scale_x, scale_x)
+            final_scale_y = lerp(self.prev_scale_y, scale_y)
+            final_offset_x = lerp(self.prev_offset_x, offset_x)
+            final_offset_y = lerp(self.prev_offset_y, offset_y)
+
+            # Update particle positions based on precomputed velocities
+            for idx, particle in enumerate(self.particlePos):
+                x, y, _ = particle
+                vel_x, vel_y = velocities[idx]
+                x += vel_x
+                y += vel_y
+                
+                scaled_x = (x + final_offset_x) * final_scale_x
+                scaled_y = (y + final_offset_y) * final_scale_y
+                pygame.draw.circle(
+                    particle_surface, (0, 0, 0), (int(scaled_x), int(scaled_y)), circle_radius
+                )
+
+            screen.blit(particle_surface, (0, 0))  # Blit particle surface onto main screen
+
+            # Update previous values for next frame
+            self.prev_scale_x, self.prev_scale_y = final_scale_x, final_scale_y
+            self.prev_offset_x, self.prev_offset_y = final_offset_x, final_offset_y
+
+            # Render the FPS and blit it onto the screen
+            fps_text = font.render(f"FPS: {clock.get_fps():.2f}", True, (0, 0, 0))
+            screen.blit(fps_text, (10, 10))
+
+            pygame.display.flip()
+            clock.tick(60)  # Set max fps to 60
+
 
     def animate(self, save=False, filename="animation.mp4", fps=60):
         """Display the animation in a matplotlib animation. If save is True, save the animation to filename."""
@@ -66,7 +137,7 @@ class UniverseGame:
         self.time_prev = time()
         ax.set_title(f"FPS: {fps:.2f}")
 
-    def _update_particle_positions(self, ax):
+    def _update_particle_positions(self, ax=None):
         self._move_particles_based_on_angle()
         if self.clip_boundary:
             self._handle_boundary()
@@ -144,5 +215,7 @@ class UniverseGame:
             self.particlePos[condition, 2] = angle - self.particlePos[condition, 2]
 
     def _recalculate_limits(self, ax):
+        if ax is None:
+            return
         ax.set_xlim(self.particlePos[:, 0].min(), self.particlePos[:, 0].max())
         ax.set_ylim(self.particlePos[:, 1].min(), self.particlePos[:, 1].max())
