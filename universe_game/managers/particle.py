@@ -17,7 +17,8 @@ class ParticleManager:
 
     def _initialize_particle_positions(self):
         if self.distribution == "uniform":
-            positions = np.random.rand(self.n_particles, 3) * self.box_width
+            positions = np.random.rand(self.n_particles, 3)
+            positions[:, 0:2] *= self.box_width
         elif self.distribution == "hexagonal":
             positions = hexagonal_lattice(
                 n_particles=self.n_particles, radius=self.radius
@@ -25,6 +26,7 @@ class ParticleManager:
             self.box_width = np.max(positions[:, 0:2])
 
         positions[:, 2] *= 360
+
         return positions
 
     def _update_particle_positions(self):
@@ -50,6 +52,7 @@ class ParticleManager:
         return direction_turn
 
     def _get_effective_radius_sq(self, global_radius_sq=1000**2):
+        global_radius_sq = self.radius * global_radius_sq
         global_radius_mask = (
             np.random.rand(self.n_particles) < self.chance_for_global_radius
         )
@@ -86,21 +89,27 @@ class ParticleManager:
         left_counter = left_mask.sum(axis=1)
         right_counter = right_mask.sum(axis=1)
         direction_turn = np.sign(left_counter - right_counter)
-        no_neighbors = left_counter + right_counter == 1
-        direction_turn[no_neighbors] = np.random.uniform(
-            -180, 180, size=no_neighbors.sum()
+        no_neighbors = left_counter + right_counter == 0
+        random_turns = np.random.choice(
+            [-90 / self.beta, 90 / self.beta], size=no_neighbors.sum()
         )
+        direction_turn[no_neighbors] = random_turns
+
         return direction_turn
 
     def _get_turn_masks(self, distances_sq, relative_bearings, effective_radius_sq):
         effective_radius_sq_newaxis = effective_radius_sq[:, np.newaxis]
-        within_radius = ne.evaluate("distances_sq < effective_radius_sq_newaxis")
-        left_mask = ne.evaluate("within_radius & (relative_bearings <= 0)")
+        within_radius = ne.evaluate(
+            "(distances_sq < effective_radius_sq_newaxis) & (distances_sq > 0)"
+        )
+        left_mask = ne.evaluate("within_radius & (relative_bearings < 0)")
         right_mask = ne.evaluate("within_radius & (relative_bearings > 0)")
         return left_mask, right_mask
 
     def _apply_turns(self, turns):
-        self.particle_pos[:, 2] = np.mod(self.particle_pos[:, 2] + turns * self.beta, 360)
+        self.particle_pos[:, 2] = np.mod(
+            self.particle_pos[:, 2] + turns * self.beta, 360
+        )
 
     def _handle_boundary(self):
         self._reflect_off_boundaries()
@@ -113,5 +122,6 @@ class ParticleManager:
             (self.particle_pos[:, 1] > self.box_width, 360),
             (self.particle_pos[:, 1] < 0, 360),
         ]
+
         for condition, angle in conditions:
             self.particle_pos[condition, 2] = angle - self.particle_pos[condition, 2]
