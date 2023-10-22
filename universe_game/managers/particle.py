@@ -13,20 +13,22 @@ class ParticleManager:
         self.box_width = kwargs.get("box_width", 1)
         self.clip_boundary = kwargs.get("clip_boundary", True)
         self.distribution = kwargs.get("distribution", "uniform")
+        self.initial_range = kwargs.get("initial_range", self.box_width)
         self.particle_pos = self._initialize_particle_positions()
 
     def _initialize_particle_positions(self):
         if self.distribution == "uniform":
             positions = np.random.rand(self.n_particles, 3)
-            positions[:, 0:2] *= self.box_width
+            box_center = self.box_width / 2
+            positions[:, 0:2] *= self.initial_range
+            positions[:, 0:2] -= self.initial_range / 2
+            positions[:, 0:2] += box_center
         elif self.distribution == "hexagonal":
             positions = hexagonal_lattice(
                 n_particles=self.n_particles, radius=self.radius
             )
             self.box_width = np.max(positions[:, 0:2])
-
         positions[:, 2] *= 360
-
         return positions
 
     def _update_particle_positions(self):
@@ -90,8 +92,9 @@ class ParticleManager:
         right_counter = right_mask.sum(axis=1)
         direction_turn = np.sign(left_counter - right_counter)
         no_neighbors = left_counter + right_counter == 0
+        random_turn_range = 90 / self.beta if self.beta != 0 else 0
         random_turns = np.random.choice(
-            [-90 / self.beta, 90 / self.beta], size=no_neighbors.sum()
+            [-random_turn_range, random_turn_range], size=no_neighbors.sum()
         )
         direction_turn[no_neighbors] = random_turns
 
