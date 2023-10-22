@@ -33,6 +33,31 @@ python main.py
 ```
 This will start the simulation and display the results using Matplotlib.
 
+One can experiment with the simulation by changing the initial conditions in the `main.py` file. The initial conditions are defined in the `initial_conditions.py` file.
+
+---
+## Examples
+Some interesting initial conditions have been provided in the `interesting_conds.py` file, which can be called by:
+```bash
+python interesting_conds.py <initial_condition_name>
+```
+`stable_ring_collapse`:
+![](gifs/stable_ring_collapse.gif)
+
+`stable_ring`:
+![](gifs/shedding_ring.gif)
+
+`stable_ring`:
+![](gifs/petri_dish.gif)
+
+`pulse_ring`:
+![](gifs/pulse_ring.gif)
+
+`swarm`:
+![](gifs/swarm.gif)
+
+
+
 ---
 
 ## License

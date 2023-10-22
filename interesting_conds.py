@@ -44,8 +44,9 @@ conds = {
         "radius": 4,
         "chance_for_global_radius": 0.99,
         "beta": 0.2,
-        "box_width": 10,
-        "clip_boundary": False,
+        "box_width": 1400,
+        "initial_range": 5,
+        "clip_boundary": True,
         "update_interval": 50,
         "distribution": "uniform",
         "draw_trails": False,
@@ -56,8 +57,9 @@ conds = {
         "radius": 4,
         "chance_for_global_radius": 1,
         "beta": 0.2,
-        "box_width": 10,
-        "clip_boundary": False,
+        "box_width": 1400,
+        "initial_range": 1,
+        "clip_boundary": True,
         "update_interval": 50,
         "distribution": "uniform",
         "draw_trails": False,
@@ -96,4 +98,4 @@ if __name__ == "__main__":
     for key, value in conds[condition].items():
         print(f"    {key}: {value}")
     game = UniverseGame(**conds[condition])
-    game.start(mode="pygame")
+    game.start(mode="pygame", save=True, filename=f"{condition}.mp4")

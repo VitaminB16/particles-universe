@@ -9,8 +9,8 @@ class GameController:
         self.pm = ParticleManager(**kwargs)
         self.renderer = GraphicsRenderer(self.pm, **kwargs)
 
-    def start(self, mode="pygame"):
+    def start(self, mode="pygame", **kwargs):
         if mode == "pygame":
-            self.renderer.start_pygame()
+            self.renderer.start_pygame(**kwargs)
         elif mode == "matplotlib":
-            self.renderer.start_matplotlib()
+            self.renderer.start_matplotlib(**kwargs)
