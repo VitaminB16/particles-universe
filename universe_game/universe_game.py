@@ -23,12 +23,12 @@ class UniverseGame:
         self.clip_boundary = kwargs.get("clip_boundary", True)
         self.distribution = kwargs.get("distribution", "uniform")
         self.draw_radius = kwargs.get("draw_radius", False)
-        print("Initialized UniverseGame with the following parameters:")
-        jprint(self.__dict__)
+        self.draw_trails = kwargs.get("draw_trails", False)
         self.particlePos = self._initialize_particle_positions()
-        self.prev_scale_x, self.prev_scale_y = 1, 1
+        self.prev_scale_x, self.prev_scale_y = 800/self.box_width, 800/self.box_width
         self.prev_offset_x, self.prev_offset_y = 0, 0
         self.time_prev = time()
+        self.window_smooth = 0 if self.clip_boundary else 0.05
 
     def _initialize_particle_positions(self):
         if self.distribution == "uniform":
@@ -65,7 +65,13 @@ class UniverseGame:
                     return
 
             screen.fill((255, 255, 255))  # Fill screen with white
-            particle_surface.fill((0, 0, 0, 0))  # Clear particle surface
+            if self.draw_trails:
+                fade_alpha = 5  # Adjust this value to control the rate of fading; smaller values create longer trails
+                fade_surface = pygame.Surface(window_size, pygame.SRCALPHA)
+                fade_surface.fill((255, 255, 255, fade_alpha))
+                particle_surface.blit(fade_surface, (0, 0))
+            else:
+                particle_surface.fill((0, 0, 0, 0))  # Clear particle surface
 
             self._update_particle_positions()
 
@@ -73,10 +79,10 @@ class UniverseGame:
                 self.particlePos, window_size, padding=0.2
             )
 
-            final_scale_x = lerp(self.prev_scale_x, scale_x)
-            final_scale_y = lerp(self.prev_scale_y, scale_y)
-            final_offset_x = lerp(self.prev_offset_x, offset_x)
-            final_offset_y = lerp(self.prev_offset_y, offset_y)
+            final_scale_x = lerp(self.prev_scale_x, scale_x, self.window_smooth)
+            final_scale_y = lerp(self.prev_scale_y, scale_y, self.window_smooth)
+            final_offset_x = lerp(self.prev_offset_x, offset_x, self.window_smooth)
+            final_offset_y = lerp(self.prev_offset_y, offset_y, self.window_smooth)
 
             # Update particle positions based on precomputed velocities
             for idx, particle in enumerate(self.particlePos):
