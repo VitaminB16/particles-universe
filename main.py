@@ -18,4 +18,4 @@ if __name__ == "__main__":
         draw_radius=False,
     )
     # game.animate(save=False, filename="animation.mp4", fps=60)
-    game.start(mode="matplotlib")
+    game.start(mode="pygame")

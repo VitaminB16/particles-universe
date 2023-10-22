@@ -153,17 +153,13 @@ class GraphicsRenderer:
     def _recalculate_limits(self, ax):
         if ax is None:
             return
-        x_low = (
-            np.percentile(self.particle_manager.particle_pos[:, 0], 0.03) - self.radius
-        )
+        x_low = np.percentile(self.particle_manager.particle_pos[:, 0], 3) - self.radius / 2
         x_high = (
-            np.percentile(self.particle_manager.particle_pos[:, 0], 0.97) + self.radius
+            np.percentile(self.particle_manager.particle_pos[:, 0], 97) + self.radius / 2
         )
-        y_low = (
-            np.percentile(self.particle_manager.particle_pos[:, 1], 0.03) - self.radius
-        )
+        y_low = np.percentile(self.particle_manager.particle_pos[:, 1], 3) - self.radius / 2
         y_high = (
-            np.percentile(self.particle_manager.particle_pos[:, 1], 0.97) + self.radius
+            np.percentile(self.particle_manager.particle_pos[:, 1], 97) + self.radius / 2
         )
         ax.set_xlim(x_low, x_high)
         ax.set_ylim(y_low, y_high)
