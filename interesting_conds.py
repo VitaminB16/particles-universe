@@ -47,4 +47,4 @@ if __name__ == "__main__":
     for key, value in conds[condition].items():
         print(f"    {key}: {value}")
     game = UniverseGame(**conds[condition])
-    game.start_pygame()
+    game.start(mode="pygame")
