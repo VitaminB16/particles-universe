@@ -9,6 +9,7 @@ class ParticleManager:
         self.velocity = velocity
         self.radius = kwargs.get("radius", 1)
         self.chance_for_global_radius = kwargs.get("chance_for_global_radius", 0.1)
+        self.alpha = kwargs.get("alpha", 0)
         self.beta = kwargs.get("beta", 1)
         self.box_width = kwargs.get("box_width", 1)
         self.clip_boundary = kwargs.get("clip_boundary", True)
@@ -43,6 +44,7 @@ class ParticleManager:
         cos_vals, sin_vals = np.cos(direction_angles), np.sin(direction_angles)
         self.particle_pos[:, 0] += self.velocity * cos_vals
         self.particle_pos[:, 1] += self.velocity * sin_vals
+        print(self.particle_pos.min())
 
     def _calculate_turns(self):
         effective_radius_sq = self._get_effective_radius_sq()
@@ -111,7 +113,7 @@ class ParticleManager:
 
     def _apply_turns(self, turns):
         self.particle_pos[:, 2] = np.mod(
-            self.particle_pos[:, 2] + turns * self.beta, 360
+            self.particle_pos[:, 2] + (self.alpha + turns * self.beta), 360
         )
 
     def _handle_boundary(self):
@@ -128,3 +130,9 @@ class ParticleManager:
 
         for condition, angle in conditions:
             self.particle_pos[condition, 2] = angle - self.particle_pos[condition, 2]
+            # self.particle_pos[condition, 0] = np.clip(
+            #     self.particle_pos[condition, 0], 0, self.box_width
+            # )
+            # self.particle_pos[condition, 1] = np.clip(
+            #     self.particle_pos[condition, 1], 0, self.box_width
+            # )
