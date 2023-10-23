@@ -77,6 +77,18 @@ conds = {
         "distribution": "uniform",
         "draw_trails": False,
     },
+    "life": {
+        "n_particles": 1000,
+        "velocity": 0.2,
+        "radius": 5,
+        "beta": 17,
+        "alpha": 180,
+        "animation_speed": 2,
+        "clip_boundary": False,
+        "box_width": 5,
+        "update_interval": 50,
+        "distribution": "uniform",
+    },
 }
 
 if __name__ == "__main__":

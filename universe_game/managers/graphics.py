@@ -24,6 +24,7 @@ class GraphicsRenderer:
         self.draw_trails = kwargs.get("draw_trails", False)
         self.box_width = kwargs.get("box_width", 5)
         self.save = kwargs.get("save", False)
+        self.animation_speed = kwargs.get("animation_speed", 1)
         self.particle_pos = self.particle_manager.particle_pos
         self.prev_scale_x, self.prev_scale_y = (
             800 / self.box_width,
@@ -31,7 +32,8 @@ class GraphicsRenderer:
         )
         self.prev_offset_x, self.prev_offset_y = 0, 0
         self.time_prev = time()
-        self.window_smooth = 0 if self.clip_boundary else 0.05
+        self.window_smooth = 0.02 if self.clip_boundary else 0.05
+        self.i = 0
 
     def start_pygame(
         self, window_size=(800, 800), save=False, filename="animation.mp4"
@@ -68,7 +70,6 @@ class GraphicsRenderer:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-
 
             screen.fill((255, 255, 255))  # Fill screen with white
             if self.draw_trails:
@@ -123,16 +124,19 @@ class GraphicsRenderer:
             if not save:
                 fps_text = font.render(f"FPS: {clock.get_fps():.2f}", True, (0, 0, 0))
                 screen.blit(fps_text, (10, 10))
-            # Record video frame
-            if save:
-                frame = pygame.surfarray.array3d(screen)  # Convert screen to numpy array
-                frame = frame.swapaxes(0, 1)  # Swap axes to fit OpenCV's expectation
-                video_out.write(frame)
-            pygame.display.flip()
+            if self.i % self.animation_speed == 0:
+                pygame.display.flip()
+                # Record video frame
+                if save:
+                    frame = pygame.surfarray.array3d(screen)
+                    frame = frame.swapaxes(0, 1)
+                    video_out.write(frame)
+
+            self.i += 1
             clock.tick(120)
         if save:
             video_out.release()
-        
+
         pygame.quit()
 
     def start_matplotlib(self, save=False, filename="animation.mp4", fps=60):
