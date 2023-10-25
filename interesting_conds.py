@@ -75,13 +75,13 @@ conds = {
         "initial_range": 0,
         "update_interval": 50,
         "distribution": "uniform",
-        "draw_trails": False,
+        "draw_trails": True,
     },
-    "life": {
+    "galaxy": {
         "n_particles": 1000,
-        "velocity": 0.2,
-        "radius": 5,
-        "beta": 17,
+        "velocity": 0.4,
+        "radius": 2,
+        "beta": 2,
         "alpha": 180,
         "animation_speed": 2,
         "clip_boundary": False,
@@ -89,10 +89,36 @@ conds = {
         "update_interval": 50,
         "distribution": "uniform",
     },
+    "implosion_explosion": {
+        "n_particles": 1000,
+        "velocity": 0.1,
+        "radius": 5,
+        "beta": 180,
+        "alpha": 180,
+        "animation_speed": 2,
+        "change_direction_chance": 0.6,
+        "clip_boundary": False,
+        "box_width": 10,
+        "update_interval": 50,
+        "distribution": "uniform",
+    },
+    "onion": {
+        "n_particles": 1000,
+        "velocity": 0.1,
+        "radius": 5,
+        "beta": 90,
+        "alpha": 180,
+        "animation_speed": 2,
+        "clip_boundary": False,
+        "box_width": 10,
+        "update_interval": 50,
+        "distribution": "uniform",
+    },
 }
 
 if __name__ == "__main__":
     args = sys.argv[1:]
+    game_kwargs = {}
     if not args:
         print("Usage: python interesting_kwargs.py <condition>")
         print("Available conditions:")
@@ -103,6 +129,10 @@ if __name__ == "__main__":
     if condition not in conds:
         print(f"Condition {condition} not found.")
         sys.exit(1)
+    if "save" in args:
+        game_kwargs["save"] = True
+        game_kwargs["filename"] = f"{condition}2.mp4"
+        args = [arg for arg in args if arg != "save"]
     if len(args) > 1:
         n_particles = int(args[1])
         conds[condition]["n_particles"] = n_particles
@@ -110,4 +140,4 @@ if __name__ == "__main__":
     for key, value in conds[condition].items():
         print(f"    {key}: {value}")
     game = UniverseGame(**conds[condition])
-    game.start(mode="pygame", save=True, filename=f"{condition}.mp4")
+    game.start(mode="pygame", **game_kwargs)

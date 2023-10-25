@@ -32,7 +32,7 @@ class GraphicsRenderer:
         )
         self.prev_offset_x, self.prev_offset_y = 0, 0
         self.time_prev = time()
-        self.window_smooth = 0.02 if self.clip_boundary else 0.05
+        self.window_smooth = 0 if self.clip_boundary else 0.05
         self.i = 0
 
     def start_pygame(
@@ -73,7 +73,7 @@ class GraphicsRenderer:
 
             screen.fill((255, 255, 255))  # Fill screen with white
             if self.draw_trails:
-                fade_alpha = 5  # Adjust this value to control the rate of fading; smaller values create longer trails
+                fade_alpha = 12  # Adjust this value to control the rate of fading; smaller values create longer trails
                 fade_surface = pygame.Surface(window_size, pygame.SRCALPHA)
                 fade_surface.fill((255, 255, 255, fade_alpha))
                 particle_surface.blit(fade_surface, (0, 0))

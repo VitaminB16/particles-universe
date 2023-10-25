@@ -41,20 +41,16 @@ Some interesting initial conditions have been provided in the `interesting_conds
 ```bash
 python interesting_conds.py <initial_condition_name>
 ```
-`stable_ring_collapse`:
-![](gifs/stable_ring_collapse.gif)
-
-`stable_ring`:
-![](gifs/shedding_ring.gif)
-
-`stable_ring`:
-![](gifs/petri_dish.gif)
-
-`pulse_ring`:
-![](gifs/pulse_ring.gif)
-
-`swarm`:
-![](gifs/swarm.gif)
+<!-- Table of two columns with gifs and captions -->
+| Initial Condition Name | GIF |
+| :--: | :--: |
+| **`galaxy`** | ![](gifs/galaxy.gif) |
+| **`onion`** | ![](gifs/onion.gif) |
+| **`stable_ring_collapse`** | ![](gifs/stable_ring_collapse.gif) |
+| **`shedding_ring`** | ![](gifs/shedding_ring.gif) |
+| **`petri_dish`** | ![](gifs/petri_dish.gif) |
+| **`pulse_ring`** | ![](gifs/pulse_ring.gif) |
+| **`swarm`** | ![](gifs/swarm.gif) |
 
 
 

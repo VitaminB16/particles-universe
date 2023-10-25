@@ -44,7 +44,6 @@ class ParticleManager:
         cos_vals, sin_vals = np.cos(direction_angles), np.sin(direction_angles)
         self.particle_pos[:, 0] += self.velocity * cos_vals
         self.particle_pos[:, 1] += self.velocity * sin_vals
-        print(self.particle_pos.min())
 
     def _calculate_turns(self):
         effective_radius_sq = self._get_effective_radius_sq()

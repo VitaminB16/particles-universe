@@ -12,6 +12,7 @@ matplotlib = "^3.8.0"
 scipy = "^1.11.3"
 pygame = "^2.5.2"
 numexpr = "^2.8.7"
+opencv-python = "^4.8.1.78"
 
 [build-system]
 requires = ["poetry-core"]
